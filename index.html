@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Chips Brets</title>
+    <link href="https://db.onlinewebfonts.com/c/6a27816ccf5d31b4fe8f6228b4dcb35c?family=Tendria+LT+W01" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <style>
+        @font-face {
+            font-family: "Tendria LT W01";
+            src: url("https://db.onlinewebfonts.com/t/6a27816ccf5d31b4fe8f6228b4dcb35c.eot");
+            src: url("https://db.onlinewebfonts.com/t/6a27816ccf5d31b4fe8f6228b4dcb35c.woff2") format("woff2"),
+                 url("https://db.onlinewebfonts.com/t/6a27816ccf5d31b4fe8f6228b4dcb35c.woff") format("woff"),
+                 url("https://db.onlinewebfonts.com/t/6a27816ccf5d31b4fe8f6228b4dcb35c.ttf") format("truetype");
+        }
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: "Tendria LT W01", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #center-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #layer2 {
+            mix-blend-mode: overlay;
+        }
+        .text {
+            position: absolute;
+            font-weight: bold;
+            color: #ffffff;
+            cursor: move;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        #layer3 {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            cursor: move;
+        }
+        .controls {
+            width: 600px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1 1 calc(50% - 10px);
+        }
+        .input-field, .slider, .button {
+            background-color: #3d3d3d;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 14px;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #BDA680;
+        }
+        .slider {
+            width: 100%;
+            accent-color: #BDA680;
+        }
+        .button {
+            background-color: #BDA680;
+            color: #1a1a1a;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            font-weight: bold;
+        }
+        .color-picker {
+            width: 100%;
+            height: 40px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+        #upload-btn {
+            background-color: #3d3d3d;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        label {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="center-container">
+        <img id="layer1" class="layer" src="https://i.goopics.net/cs6wd6.png" alt="Fond">
+        <canvas id="layer2" class="layer"></canvas>
+        <div id="title" class="text" style="font-size: 24px;">Titre</div>
+        <div id="subtitle" class="text" style="font-size: 18px;">Sous-titre</div>
+        <img id="layer3" src="" alt="Image Importée">
+    </div>
+    <div class="controls">
+        <div class="control-group">
+            <label for="title-input">Modifier le titre</label>
+            <input type="text" id="title-input" class="input-field">
+        </div>
+        <div class="control-group">
+            <label for="subtitle-input">Modifier le sous-titre</label>
+            <input type="text" id="subtitle-input" class="input-field">
+        </div>
+        <div class="control-group">
+            <label for="upload-btn">Importer une image</label>
+            <input type="file" id="upload-btn" accept="image/*">
+        </div>
+        <div class="control-group">
+            <label for="title-size-slider">Taille du titre</label>
+            <input type="range" id="title-size-slider" class="slider" min="12" max="72" value="24">
+        </div>
+        <div class="control-group">
+            <label for="subtitle-size-slider">Taille du sous-titre</label>
+            <input type="range" id="subtitle-size-slider" class="slider" min="12" max="72" value="18">
+        </div>
+        <div class="control-group">
+            <label for="image-size-slider">Taille de l'image</label>
+            <input type="range" id="image-size-slider" class="slider" min="50" max="300" value="150">
+        </div>
+        <div class="control-group">
+            <label for="color-picker">Couleur des pixels violets</label>
+            <input type="color" id="color-picker" class="color-picker" value="#8a0078">
+        </div>
+        <button id="download-btn" class="button">Exporter</button>
+    </div>
+    <script>
+        const title = document.getElementById('title');
+        const subtitle = document.getElementById('subtitle');
+        const layer2 = document.getElementById('layer2');
+        const layer3 = document.getElementById('layer3');
+        const titleInput = document.getElementById('title-input');
+        const subtitleInput = document.getElementById('subtitle-input');
+        const titleSizeSlider = document.getElementById('title-size-slider');
+        const subtitleSizeSlider = document.getElementById('subtitle-size-slider');
+        const imageSizeSlider = document.getElementById('image-size-slider');
+        const uploadBtn = document.getElementById('upload-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const colorPicker = document.getElementById('color-picker');
+
+        // Configuration du canvas pour layer2
+        layer2.width = 600;
+        layer2.height = 600;
+        const ctx = layer2.getContext('2d');
+
+        // Charger et traiter l'image overlay
+        const overlayImage = new Image();
+        overlayImage.crossOrigin = "Anonymous";
+        overlayImage.src = "https://i.goopics.net/kfadki.png";
+        
+        overlayImage.onload = function() {
+            updateOverlayColor(colorPicker.value);
+        };
+
+        function updateOverlayColor(newColor) {
+            ctx.drawImage(overlayImage, 0, 0, 600, 600);
+            const imageData = ctx.getImageData(0, 0, 600, 600);
+            const data = imageData.data;
+            
+            // Convertir la couleur hex en RGB
+            const r = parseInt(newColor.substr(1,2), 16);
+            const g = parseInt(newColor.substr(3,2), 16);
+            const b = parseInt(newColor.substr(5,2), 16);
+
+            for(let i = 0; i < data.length; i += 4) {
+                // Si le pixel est violet (#8a0078)
+                if(Math.abs(data[i] - 138) < 30 && Math.abs(data[i+1] - 0) < 30 && Math.abs(data[i+2] - 120) < 30) {
+                    data[i] = r;
+                    data[i+1] = g;
+                    data[i+2] = b;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        colorPicker.addEventListener('input', (e) => {
+            updateOverlayColor(e.target.value);
+        });
+
+        titleInput.addEventListener('input', () => title.textContent = titleInput.value);
+        subtitleInput.addEventListener('input', () => subtitle.textContent = subtitleInput.value);
+
+        titleSizeSlider.addEventListener('input', () => {
+            title.style.fontSize = `${titleSizeSlider.value}px`;
+        });
+
+        subtitleSizeSlider.addEventListener('input', () => {
+            subtitle.style.fontSize = `${subtitleSizeSlider.value}px`;
+        });
+
+        imageSizeSlider.addEventListener('input', () => {
+            layer3.style.width = `${imageSizeSlider.value}px`;
+            layer3.style.height = `${imageSizeSlider.value}px`;
+        });
+
+        uploadBtn.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    layer3.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        interact('.text, #layer3').draggable({
+            listeners: {
+                move(event) {
+                    const target = event.target;
+                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                    target.style.transform = `translate(${x}px, ${y}px)`;
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                }
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            html2canvas(document.getElementById('center-container'), {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'chips-generator.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
+    </script>
+</body>
+</html>
